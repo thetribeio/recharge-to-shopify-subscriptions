@@ -1,41 +1,53 @@
 import requests
 import os
 import csv
+from dotenv import load_dotenv
 
 
-def fetch_data(api_url, headers):
-    response = requests.get(api_url, headers=headers)
+load_dotenv()
+
+if not os.getenv("ACCESS_TOKEN"):
+    raise EnvironmentError(
+        "Required environment variable 'ACCESS_TOKEN' is not set.")
+
+output_directory = "assets"
+output_file_name = "subscription-contracts.csv"
+columns = ["id", "address1", "status", "next_charge_scheduled_at"]
+
+
+def fetch_data(endpoint):
+    access_token = os.getenv("ACCESS_TOKEN")
+    api_url = os.getenv("API_URL")
+    headers = {"X-Recharge-Access-Token": access_token,
+               "Accept": "application/json"}
+
+    response = requests.get(f"{api_url}{endpoint}", headers=headers)
     if response.status_code != 200:
         print("Failed to fetch data:", response.status_code)
 
-    subscriptions = response.json()["subscriptions"]
+    return response.json()
+
+
+def fetch_subscriptions():
+    subscriptions = fetch_data("/subscriptions")["subscriptions"]
     data = []
 
     for subscription in subscriptions:
         address_id = subscription["address_id"]
-        address_url = f"https://api.rechargeapps.com/addresses/{address_id}"
+        address_data = fetch_data(f"/addresses/{address_id}")["address"]
 
-        address_response = requests.get(address_url, headers=headers)
-        if address_response.status_code == 200:
-            address_data = address_response.json()["address"]
-            subscription.update(address_data)
-            data.append(subscription)
-        else:
-            print(f"Failed to fetch address data for {
-                  address_id}: ", address_response.status_code)
+        subscription.update(address_data)
+        data.append(subscription)
 
     return data
 
 
-access_token = os.environ.get("ACCESS_TOKEN", "")
-api_url = "https://api.rechargeapps.com/subscriptions"
-headers = {"X-Recharge-Access-Token": access_token,
-           "Accept": "application/json"}
-data = fetch_data(api_url, headers)
+def generate_csv(data, dir, filename, column_names):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
 
-
-def generate_csv(data, csv_file_path, column_names):
-    with open(csv_file_path, mode='w', newline='') as file:
+    file_path = os.path.join(dir, filename)
+    with open(file_path, mode='w', newline='') as file:
         writer = csv.DictWriter(
             file, fieldnames=column_names, extrasaction="ignore")
         writer.writeheader()
@@ -43,6 +55,10 @@ def generate_csv(data, csv_file_path, column_names):
             writer.writerow(item)
 
 
-csv_file_path = "assets/subscriptions.csv"
-column_names = ["id", "address1", "status", "next_charge_scheduled_at"]
-generate_csv(data, csv_file_path, column_names)
+def main():
+    data = fetch_subscriptions()
+    generate_csv(data, output_directory, output_file_name, columns)
+
+
+if __name__ == "__main__":
+    main()
