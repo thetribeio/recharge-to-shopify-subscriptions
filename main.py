@@ -31,6 +31,9 @@ class SubscriptionProcessor:
         subscriptions = self.fetch_data(
             "/subscriptions?status=active&limit=250")["subscriptions"]
         for index, sub in enumerate(subscriptions):
+            if not sub["next_charge_scheduled_at"]:
+                continue
+
             sys.stdout.write(
                 f"\rProcessed {index} of {len(subscriptions)} subscriptions")
             sys.stdout.flush()
