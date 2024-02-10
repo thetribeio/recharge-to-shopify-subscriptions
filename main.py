@@ -1,5 +1,6 @@
 import requests
 import os
+import sys
 import csv
 from dotenv import load_dotenv
 from utils import extract_id_from_token, format_iso8601, transform_cadence
@@ -29,8 +30,14 @@ class SubscriptionProcessor:
     def fetch_subscriptions(self):
         subscriptions = self.fetch_data(
             "/subscriptions?status=active&limit=250")["subscriptions"]
-        self.subscriptions = [self.process_subscription(
-            sub) for sub in subscriptions]
+        for index, sub in enumerate(subscriptions):
+            sys.stdout.write(
+                f"\rProcessed {index} of {len(subscriptions)} subscriptions")
+            sys.stdout.flush()
+
+            processed_sub = self.process_subscription(sub)
+            self.subscriptions.append(processed_sub)
+
         return self.subscriptions
 
     def subscription_keys(self):
