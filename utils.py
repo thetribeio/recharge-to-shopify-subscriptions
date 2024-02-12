@@ -1,21 +1,21 @@
 from datetime import datetime
 
 
-def transform_cadence(order_interval_unit, order_interval_frequency):
-    if order_interval_unit == 'day':
-        days = int(order_interval_frequency)
+def transform_cadence(cadence_interval, cadence_interval_count):
+    if cadence_interval == 'day':
+        days = int(cadence_interval_count)
         if days % 30 == 0:
             return 'month', days // 30
         elif days % 7 == 0:
             return 'week', days // 7
         else:
             return 'week', days // 7
-    elif order_interval_unit == 'month':
-        return 'month', int(order_interval_frequency)
-    elif order_interval_unit == 'week':
-        return 'week', int(order_interval_frequency)
+    elif cadence_interval == 'month':
+        return 'month', int(cadence_interval_count)
+    elif cadence_interval == 'week':
+        return 'week', int(cadence_interval_count)
     else:
-        return order_interval_unit, int(order_interval_frequency)
+        return cadence_interval, int(cadence_interval_count)
 
 
 def extract_id_from_token(token):

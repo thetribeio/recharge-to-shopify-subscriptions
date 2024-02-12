@@ -43,7 +43,7 @@ class SubscriptionProcessor:
 
         return self.subscriptions
 
-    def subscription_keys(self):
+    def subscription_schema(self):
         return self.subscriptions[0].keys() if len(self.subscriptions) > 0 else None
 
     def default_payment_method(self, customer_id):
@@ -124,9 +124,9 @@ def main():
 
     processor = SubscriptionProcessor(api_url, access_token)
     data = processor.fetch_subscriptions()
+    column_names = processor.subscription_schema()
 
-    generate_csv(data, OUTPUT_DIRECTORY, OUTPUT_FILE_NAME,
-                 processor.subscription_keys())
+    generate_csv(data, OUTPUT_DIRECTORY, OUTPUT_FILE_NAME, column_names)
 
 
 if __name__ == "__main__":
