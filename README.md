@@ -42,7 +42,7 @@ To run the script, execute the following command:
 ```bash
 poetry run python main.py
 ```
-This will generate the CSV file needed for importing subscription contracts into Shopify Subscriptions.
+This will generate the CSV file needed for importing subscription contracts into Shopify Subscriptions, located at `output/subscription-contracts.csv`.
 
 Please note that the current implementation does not support retrieving the shipping type and price for shipping.
 
