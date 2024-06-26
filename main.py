@@ -1,3 +1,4 @@
+import time
 import requests
 import os
 import sys
@@ -27,9 +28,8 @@ class SubscriptionProcessor:
             raise ValueError(f"Failed to fetch data: {response.status_code}")
         return response.json()
 
-    def fetch_subscriptions(self):
-        subscriptions = self.fetch_data(
-            "/subscriptions?status=active&limit=250")["subscriptions"]
+    def fetch_subscriptions_page(self, subscriptions):
+        i = 0
         for index, sub in enumerate(subscriptions):
             if not sub["next_charge_scheduled_at"]:
                 continue
@@ -38,8 +38,18 @@ class SubscriptionProcessor:
                 f"\rProcessed {index} of {len(subscriptions)} subscriptions")
             sys.stdout.flush()
 
+            if i % 30 == 0:
+                time.sleep(10)
             processed_sub = self.process_subscription(sub)
             self.subscriptions.append(processed_sub)
+            i += 1
+
+        return self.subscriptions
+
+    def fetch_subscriptions(self):
+        data = self.fetch_data("/subscriptions?status=active&limit=250")
+        subscriptions = data["subscriptions"]
+        self.fetch_subscriptions_page(subscriptions)
 
         return self.subscriptions
 
@@ -74,12 +84,12 @@ class SubscriptionProcessor:
         return {
             "handle": data["id"],
             "upcoming_billing_date": format_iso8601(data["next_charge_scheduled_at"]),
-            "customer_id": data["payment_method"]["processor_customer_token"],
+            "customer_id": data["payment_method"]["processor_customer_token"] if data["payment_method"] else None,
             "currency_code": data["presentment_currency"],
             "status": data["status"],
             "cadence_interval": cadence_interval,
             "cadence_interval_count": cadence_interval_count,
-            "customer_payment_method_id": extract_id_from_token(data["payment_method"]["processor_payment_method_token"]),
+            "customer_payment_method_id": extract_id_from_token(data["payment_method"]["processor_payment_method_token"]) if data["payment_method"] and data["payment_method"]["processor_payment_method_token"] else None,
             "delivery_price": 0,
             "delivery_method_type": "Shipping",
             "delivery_address_first_name": data["address"]["first_name"],
